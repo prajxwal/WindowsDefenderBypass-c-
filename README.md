@@ -26,7 +26,9 @@ This tool disables certain Windows Defender settings using registry modification
 4. Once executed, it will modify the Windows Defender settings using registry modifications and PowerShell commands.
 
 ## How to Run
-- Clone the repository:
+- Clone the repository: https://github.com/prajxwal/WindowsDefenderBypass-c#
+
+- Open the solution in Visual Studio or compile using the command line:
 
 
 ## Features
@@ -50,8 +52,7 @@ This tool disables certain Windows Defender settings using registry modification
 4. Once executed, it will modify the Windows Defender settings using registry modifications and PowerShell commands.
 
 ## How to Run
-- Clone the repository: 
-- git clone https://github.com/prajxwal/Windows-Defender-Bypass
+- Clone the repository: git clone https://github.com/prajxwal/Windows-Defender-Bypass
 - Open the solution in Visual Studio or compile using the command line:
 - Run the compiled executable `Program.exe` with administrative privileges.
 
