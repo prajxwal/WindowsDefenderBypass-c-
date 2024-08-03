@@ -1,16 +1,7 @@
-/*
- * This code is part of the WindowsDefenderBypass-c# project. It demonstrates how to disable certain Windows Defender settings
- * using registry modifications and PowerShell commands. This tool is intended for educational purposes to show how these configurations
- * can be managed programmatically. 
- *
- * Disclaimer: This program is distributed for educational purposes only. Modifying system settings and disabling security features 
- * should only be done responsibly, with appropriate permissions, and in a controlled environment. 
- * 
- */
-
 using System;
 using System.Diagnostics;
 using Microsoft.Win32;
+using System.Security.Principal;
 
 class Program
 {
@@ -63,7 +54,7 @@ class Program
     {
         ProcessStartInfo startInfo = new ProcessStartInfo();
         startInfo.FileName = "powershell.exe";
-        startInfo.Arguments = "-Command \"" + command + "\"";
+        startInfo.Arguments = $"-Command \"{command}\""; // Use $ to ensure the command is properly formatted
         startInfo.UseShellExecute = false;
         startInfo.CreateNoWindow = true;
         startInfo.RedirectStandardOutput = true;
